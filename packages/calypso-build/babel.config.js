@@ -1,6 +1,4 @@
 /** @format */
-const _ = require( 'lodash' );
-const path = require( 'path' );
 
 const isCalypsoClient = process.env.CALYPSO_CLIENT === 'true';
 const isBrowser = isCalypsoClient || 'true' === process.env.TARGET_BROWSER;
