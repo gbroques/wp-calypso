@@ -6,7 +6,6 @@ const isCalypsoClient = process.env.CALYPSO_CLIENT === 'true';
 const isBrowser = isCalypsoClient || 'true' === process.env.TARGET_BROWSER;
 
 const modules = isBrowser ? false : 'commonjs'; // Use commonjs for Node
-const codeSplit = require( './server/config' ).isEnabled( 'code-splitting' );
 
 // Use target configuration in package.json for browser builds.
 const targets = isBrowser ? undefined : { node: 'current' };
@@ -27,17 +26,7 @@ const config = {
 		],
 		'@babel/react',
 	],
-	plugins: _.compact( [
-		[
-			path.join(
-				__dirname,
-				'server',
-				'bundler',
-				'babel',
-				'babel-plugin-transform-wpcalypso-async'
-			),
-			{ async: isCalypsoClient && codeSplit },
-		],
+	plugins: [
 		'@babel/plugin-proposal-class-properties',
 		'@babel/plugin-proposal-export-default-from',
 		'@babel/plugin-proposal-export-namespace-from',
@@ -51,8 +40,7 @@ const config = {
 				useESModules: false,
 			},
 		],
-		isCalypsoClient && './inline-imports.js',
-	] ),
+	],
 	overrides: [
 		{
 			test: [ './client/gutenberg/extensions', './packages/jetpack-blocks' ],
