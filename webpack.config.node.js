@@ -96,7 +96,6 @@ const webpackConfig = {
 			},
 			TranspileConfig.loader( {
 				workerCount,
-				configFile: path.join( __dirname, 'babel.config.js' ),
 				cacheDirectory: path.join( __dirname, 'build', '.babel-server-cache' ),
 				cacheIdentifier,
 				exclude: /(node_modules|devdocs[\/\\]search-index)/,
