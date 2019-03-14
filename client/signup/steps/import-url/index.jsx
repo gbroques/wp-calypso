@@ -90,8 +90,10 @@ class ImportURLStepComponent extends Component {
 
 		// We have a verified, importable site url.
 		SignupActions.submitSignupStep( { stepName }, [], {
-			importSiteDetails: siteDetails,
-			importUrl: siteDetails.siteUrl,
+			importEngine: siteDetails.engine,
+			importFavicon: siteDetails.favicon,
+			importSiteTitle: siteDetails.siteTitle,
+			importSiteUrl: siteDetails.siteUrl,
 			themeSlugWithRepo: 'pub/radcliffe-2',
 		} );
 

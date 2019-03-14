@@ -431,7 +431,13 @@ export function generateSteps( {
 		/* Imports */
 		'from-url': {
 			stepName: 'from-url',
-			providesDependencies: [ 'importSiteDetails', 'importUrl', 'themeSlugWithRepo' ],
+			providesDependencies: [
+				'importEngine',
+				'importFavicon',
+				'importSiteTitle',
+				'importSiteUrl',
+				'themeSlugWithRepo',
+			],
 		},
 
 		'reader-landing': {
