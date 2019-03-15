@@ -1,3 +1,11 @@
+/**
+ * External dependencies
+ */
+const _ = require( 'lodash' );
+const path = require( 'path' );
+
+const isCalypsoClient = process.env.CALYPSO_CLIENT === 'true';
+
 const codeSplit = require( './server/config' ).isEnabled( 'code-splitting' );
 
 const config = {
