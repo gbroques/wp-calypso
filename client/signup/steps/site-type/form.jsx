@@ -12,6 +12,7 @@ import { localize } from 'i18n-calypso';
  */
 import Button from 'components/button';
 import Card from 'components/card';
+import CountedTextarea from 'components/forms/counted-textarea';
 import FormFieldset from 'components/forms/form-fieldset';
 import FormLabel from 'components/forms/form-label';
 import FormRadio from 'components/forms/form-radio';
@@ -35,27 +36,36 @@ class SiteTypeForm extends Component {
 	constructor( props ) {
 		super( props );
 		// eslint-disable-next-line
-		console.log( 'props', props );
 		this.state = {
 			siteType: props.siteType,
+			value: props.otherValue,
 		};
 	}
 
 	handleRadioChange = event => this.setState( { siteType: event.currentTarget.value } );
 
 	handleSubmit = event => {
-		const { siteType } = this.state;
+		const { value, siteType } = this.state;
 
 		event.preventDefault();
 
 		this.props.recordTracksEvent( 'calypso_signup_actions_submit_site_type', {
 			value: siteType,
 		} );
-
+		if ( value ) {
+			this.setState( { siteType: [ ...this.state.siteType, value ] } );
+		}
 		this.props.submitForm( siteType );
 	};
 
+	onOtherCatChange = event => {
+		this.setState( { value: event.target.value } );
+	};
+
 	renderRadioOptions() {
+		const { translate } = this.props;
+		const { value } = this.state;
+
 		return getAllSiteTypes().map( siteTypeProperties => (
 			<FormLabel
 				className={ classNames( 'site-type__option', {
@@ -70,6 +80,18 @@ class SiteTypeForm extends Component {
 				/>
 				<strong className="site-type__option-label">{ siteTypeProperties.label }</strong>
 				<span className="site-type__option-description">{ siteTypeProperties.description }</span>
+				<span className="site-type__option-description">
+					{ siteTypeProperties.slug === 'other' && (
+						<CountedTextarea
+							maxLength={ 60 }
+							acceptableLength={ 59 }
+							placeholder={ translate( 'Tell us about your website' ) }
+							//		onChange={ this.onOtherCatChange }
+							value={ value }
+							showRemainingCharacters
+						/>
+					) }
+				</span>
 			</FormLabel>
 		) );
 	}

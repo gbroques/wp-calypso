@@ -98,5 +98,13 @@ export function getAllSiteTypes() {
 			siteTopicLabel: i18n.translate( 'What type of products do you sell?' ),
 			customerType: 'business',
 		},
+		{
+			id: 7,
+			slug: 'other',
+			label: i18n.translate( 'Other' ),
+			theme: 'pub/dara',
+			designType: 'blog',
+			siteTitleLabel: i18n.translate( 'What is your website about?' ),
+		},
 	];
 }
