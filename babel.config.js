@@ -23,6 +23,16 @@ const config = {
 		],
 		isCalypsoClient && './inline-imports.js',
 	] ),
+	env: {
+		test: {
+			presets: [ [ '@babel/env', { targets: { node: 'current' } } ] ],
+			plugins: [
+				'add-module-exports',
+				'babel-plugin-dynamic-import-node',
+				'./server/bundler/babel/babel-lodash-es',
+			],
+		},
+	},
 };
 
 module.exports = config;
