@@ -28,6 +28,7 @@ module.exports.loader = ( { workerCount, cacheDirectory, cacheIdentifier, exclud
 			loader: require.resolve( 'babel-loader' ),
 			options: {
 				configFile: path.join( __dirname, '..', 'babel.config.js' ),
+				babelrc: false,
 				cacheDirectory,
 				cacheIdentifier,
 			},
