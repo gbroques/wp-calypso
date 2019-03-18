@@ -7,7 +7,7 @@ import debugModule from 'debug';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
-import { debounce, find, get, noop, startsWith, throttle, trim, uniq, isEmpty } from 'lodash';
+import { debounce, find, get, noop, startsWith, throttle, trim, uniq, size } from 'lodash';
 import { localize } from 'i18n-calypso';
 import request from 'superagent';
 import { v4 as uuid } from 'uuid';
@@ -18,7 +18,43 @@ import { v4 as uuid } from 'uuid';
 import SuggestionSearch from 'components/suggestion-search';
 import { convertToCamelCase } from 'state/data-layer/utils';
 
+/**
+ * Style dependencies
+ */
+import './style.scss';
+
 const debug = debugModule( 'calypso:signup:vertical-search' );
+
+/*
+	TODO:
+	verify `startsWith` and RTL
+	use WP.com http and integrate into the state tree (loading, query, results...)
+	integrate `<SiteVerticalResults />` with common topics
+	integrate `<SuggestionSearch />` so that we can control when the loading pane shows ???
+		- OR create a minimal search icon/throbber, e.g. one dummy item with a loading symbol
+ */
+
+
+function SiteVerticalResultsLoading() {
+	return (
+		<div className="site-verticals-suggestion-search__wrapper">
+			<div className="site-verticals-suggestion-search__topic-list-item">
+				<span />
+			</div>
+			<div className="site-verticals-suggestion-search__topic-list-item">
+				<span />
+			</div>
+			<div className="site-verticals-suggestion-search__topic-list-item">
+				<span />
+			</div>
+			<div className="site-verticals-suggestion-search__topic-list-item">
+				<span />
+			</div>
+		</div>
+	);
+}
+
+
 
 export class SiteVerticalsSuggestionSearch extends Component {
 	static propTypes = {
@@ -40,8 +76,6 @@ export class SiteVerticalsSuggestionSearch extends Component {
 		searchResultsLimit: 5,
 	};
 
-	isSearchPending = false;
-
 	constructor( props ) {
 		super( props );
 		this.request = null;
@@ -49,9 +83,10 @@ export class SiteVerticalsSuggestionSearch extends Component {
 			searchValue: props.initialValue,
 			results: [],
 			defaultVertical: [],
+			selectedVertical: {}, // load saved vertical
 			railcar: this.getNewRailcar(),
 		};
-		this.props.requestVerticals( 'business', 1, this.setDefaultVerticalResults );
+		this.props.requestVerticals( 'business', 1, this.setDefaultVerticalResults, false  );
 		this.requestVerticalsThrottled = throttle( this.props.requestVerticals, 666, {
 			leading: true,
 			trailing: true,
@@ -62,7 +97,7 @@ export class SiteVerticalsSuggestionSearch extends Component {
 	componentDidMount() {
 		// If we have a stored vertical, grab the preview
 		this.props.initialValue &&
-			this.props.requestVerticals( this.props.initialValue, 1, this.setSearchResults );
+			this.props.requestVerticals( this.props.initialValue, 1, this.setSearchResults, false );
 	}
 
 	setSearchResults = results => {
@@ -83,11 +118,16 @@ export class SiteVerticalsSuggestionSearch extends Component {
 
 	// When a user is keying through the results,
 	// only update the vertical when they select a result.
-	searchForVerticalMatches = ( value = '' ) =>
-		find(
+	searchForVerticalMatches = ( value = '' ) => {
+		value = value.toLowerCase();
+		return find(
 			this.state.results,
-			item => item.verticalName.toLowerCase() === value.toLowerCase() && ! isEmpty( item.preview )
+			item => {
+				const verticalName = item.verticalName.toLowerCase();
+				return ( verticalName === value || startsWith( verticalName, value ) ) && !! item.preview;
+			}
 		);
+	};
 
 	updateVerticalData = ( result, value ) =>
 		this.props.onChange(
@@ -107,7 +147,7 @@ export class SiteVerticalsSuggestionSearch extends Component {
 		const hasValue = !! value;
 		const valueLength = value.length || 0;
 		const valueLengthShouldTriggerSearch = valueLength >= this.props.charsToTriggerSearch;
-		const result = this.searchForVerticalMatches( value );
+		const match = this.searchForVerticalMatches( value );
 
 		// Cancel delayed invocations in case of deletion
 		// and make sure the consuming component knows about it.
@@ -118,9 +158,9 @@ export class SiteVerticalsSuggestionSearch extends Component {
 
 		if (
 			hasValue &&
-			valueLengthShouldTriggerSearch &&
+			valueLengthShouldTriggerSearch /*&&
 			// Don't trigger a search if there's already an exact, non-user-defined match from the API
-			! result
+			! match*/
 		) {
 			if ( valueLength < 5 ) {
 				this.requestVerticalsThrottled(
@@ -138,8 +178,12 @@ export class SiteVerticalsSuggestionSearch extends Component {
 			this.setState( { railcar: this.getNewRailcar() } );
 		}
 
-		this.setState( { searchValue: value } );
-		this.updateVerticalData( result, value );
+		// eslint-disable-next-line
+		console.log( 'value, match', value, match, this.state.results );
+
+		this.setState( { searchValue: value, selectedVertical: match } );
+
+		this.updateVerticalData( match, value );
 	};
 
 	getSuggestions = () => this.state.results.map( vertical => vertical.verticalName );
@@ -149,8 +193,13 @@ export class SiteVerticalsSuggestionSearch extends Component {
 
 		// first do the search, omit and cache exact matches
 		queryString = queryString.trim().toLocaleLowerCase();
+
+		// Any non-user vertical matches? If so let's ensure they don't get
+		// pushed to the bottom as part of `lazyResults`
+		const match = this.searchForVerticalMatches( queryString );
+
 		const lazyResults = suggestionsArray.filter( val => {
-			if ( val.toLocaleLowerCase() === queryString ) {
+			if ( ! match && val.toLocaleLowerCase() === queryString ) {
 				queryMatch = val;
 				return false;
 			}
@@ -170,31 +219,42 @@ export class SiteVerticalsSuggestionSearch extends Component {
 
 	render() {
 		const { translate, placeholder, autoFocus } = this.props;
+		const suggestions = this.getSuggestions();
+		const areResultsEmpty = 0 === size( suggestions );
 		return (
-			<SuggestionSearch
-				id="siteTopic"
-				placeholder={ placeholder || translate( 'e.g. Fashion, travel, design, plumbing' ) }
-				onChange={ this.onSiteTopicChange }
-				suggestions={ this.getSuggestions() }
-				value={ this.state.searchValue }
-				sortResults={ this.sortSearchResults }
-				autoFocus={ autoFocus } // eslint-disable-line jsx-a11y/no-autofocus
-				railcar={ this.state.railcar }
-			/>
+			<>
+				<SuggestionSearch
+					id="siteTopic"
+					placeholder={ placeholder || translate( 'e.g. Fashion, travel, design, plumbing' ) }
+					onChange={ this.onSiteTopicChange }
+					suggestions={ suggestions }
+					value={ this.state.searchValue }
+					sortResults={ this.sortSearchResults }
+					autoFocus={ autoFocus } // eslint-disable-line jsx-a11y/no-autofocus
+					railcar={ this.state.railcar }
+				/>
+
+				{ this.props.isSearchPending && areResultsEmpty && <SiteVerticalResultsLoading /> }
+			</>
 		);
 	}
 }
-export function requestVerticals( search, limit = 7, callback ) {
+
+let isSearchPending = false;
+export function requestVerticals( search, limit = 7, callback, setLoading = true ) {
+	if ( setLoading ) {
+		isSearchPending = true;
+	}
 	request
 		.get( 'https://public-api.wordpress.com/wpcom/v2/verticals' )
 		.query( { _envelope: 1, search, limit, include_preview: true } )
 		.then( res => {
-			SiteVerticalsSuggestionSearch.isSearchPending = false;
+			isSearchPending = false;
 			callback( convertToCamelCase( get( res.body, 'body', [] ) ) );
 		} )
 		.catch( err => {
 			debug( err );
-			SiteVerticalsSuggestionSearch.isSearchPending = false;
+			isSearchPending = false;
 		} );
 }
 
@@ -202,9 +262,12 @@ export function isVerticalSearchPending() {
 	return SiteVerticalsSuggestionSearch.isSearchPending;
 }
 
+
 export default localize(
 	connect(
-		null,
+		() => ( {
+			isSearchPending,
+		} ),
 		() => ( {
 			requestVerticals,
 		} )

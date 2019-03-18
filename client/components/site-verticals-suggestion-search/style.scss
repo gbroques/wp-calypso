@@ -1,0 +1,26 @@
+.site-verticals-suggestion-search__wrapper {
+	margin-bottom: 0;
+	box-shadow: none;
+	border-radius: 0 0 4px 4px;
+}
+
+.site-verticals-suggestion-search__topic-list-item {
+	font-size: 15px;
+	color: var( --color-text );
+	border-bottom: 1px solid var( --color-neutral-50 );
+	padding: 10px 24px 10px 40px;
+	text-align: left;
+	display: block;
+	min-height: 25px;
+	&:last-child {
+		border-radius: 0 0 4px 4px;
+		border-bottom: 0;
+	}
+
+	span {
+		background-color: var( --color-neutral-0 );
+		animation: loading-fade 1.6s ease-in-out infinite;
+		height: 25px;
+		display: block;
+	}
+}
