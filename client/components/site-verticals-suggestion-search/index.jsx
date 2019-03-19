@@ -101,7 +101,17 @@ export class SiteVerticalsSuggestionSearch extends Component {
 	}
 
 	setSearchResults = results => {
-		this.setState( { results } );
+		if ( size( results ) ) {
+			const hasVerticalInput = find(
+				results,
+				item => ! item.isUserInputVertical
+			);
+			// if the only result is a user input, then concat that with the previous results and remove the last user input
+			if ( ! hasVerticalInput && 1 < size( this.state.results ) ) {
+				results = this.state.results.filter( item => ! item.isUserInputVertical ).concat( results );
+			}
+			this.setState( { results } )
+		}
 	};
 
 	setDefaultVerticalResults = defaultVertical => {
@@ -178,9 +188,6 @@ export class SiteVerticalsSuggestionSearch extends Component {
 			this.setState( { railcar: this.getNewRailcar() } );
 		}
 
-		// eslint-disable-next-line
-		console.log( 'value, match', value, match, this.state.results );
-
 		this.setState( { searchValue: value, selectedVertical: match } );
 
 		this.updateVerticalData( match, value );
@@ -221,6 +228,8 @@ export class SiteVerticalsSuggestionSearch extends Component {
 		const { translate, placeholder, autoFocus } = this.props;
 		const suggestions = this.getSuggestions();
 		const areResultsEmpty = 0 === size( suggestions );
+		// eslint-disable-next-line
+		console.log( 'suggestions', suggestions );
 		return (
 			<>
 				<SuggestionSearch
@@ -229,7 +238,9 @@ export class SiteVerticalsSuggestionSearch extends Component {
 					onChange={ this.onSiteTopicChange }
 					suggestions={ suggestions }
 					value={ this.state.searchValue }
+/*
 					sortResults={ this.sortSearchResults }
+*/
 					autoFocus={ autoFocus } // eslint-disable-line jsx-a11y/no-autofocus
 					railcar={ this.state.railcar }
 				/>
@@ -257,9 +268,9 @@ export function requestVerticals( search, limit = 7, callback, setLoading = true
 			isSearchPending = false;
 		} );
 }
-
+// this doesn't really work until we add it all to state.
 export function isVerticalSearchPending() {
-	return SiteVerticalsSuggestionSearch.isSearchPending;
+	return isSearchPending;
 }
 
 
