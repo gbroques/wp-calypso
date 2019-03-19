@@ -14,9 +14,12 @@ import { v4 as uuid } from 'uuid';
  * Internal dependencies
  */
 import SuggestionSearch from 'components/suggestion-search';
-import { getHttpData, requestHttpData } from 'state/data-layer/http-data';
-import { http } from 'state/data-layer/wpcom-http/actions';
-import { convertToCamelCase } from 'state/data-layer/utils';
+import { requestVerticals, requestDefaultVertical } from 'state/signup/steps/site-vertical/actions';
+import {
+	getSiteVerticalsLastUpdated,
+	getSiteVerticals,
+	getDefaultVertical,
+} from 'state/signup/steps/site-vertical/selectors';
 
 export class SiteVerticalsSuggestionSearch extends Component {
 	static propTypes = {
@@ -160,46 +163,16 @@ export class SiteVerticalsSuggestionSearch extends Component {
 	}
 }
 
-const SITE_VERTICALS_REQUEST_ID = 'site-verticals-search-results';
-const DEFAULT_SITE_VERTICAL_REQUEST_ID = 'default-site-verticals-search-results';
-
-const requestSiteVerticalHttpData = ( searchTerm, limit = 7, id = SITE_VERTICALS_REQUEST_ID ) =>
-	requestHttpData(
-		id,
-		http( {
-			apiNamespace: 'wpcom/v2',
-			method: 'GET',
-			path: '/verticals',
-			query: {
-				search: searchTerm,
-				limit,
-				include_preview: true,
-			},
-		} ),
-		{
-			fromApi: () => data => [ [ id, convertToCamelCase( data ) ] ],
-			freshness: -Infinity,
-		}
-	);
-
-export const isVerticalSearchPending = () =>
-	'pending' === get( getHttpData( SITE_VERTICALS_REQUEST_ID ), 'state', false );
-
 export default localize(
 	connect(
-		() => {
-			const siteVerticalHttpData = getHttpData( SITE_VERTICALS_REQUEST_ID );
-			const defaultVerticalHttpData = getHttpData( DEFAULT_SITE_VERTICAL_REQUEST_ID );
-			return {
-				lastUpdated: get( siteVerticalHttpData, 'lastUpdated', 0 ),
-				verticals: get( siteVerticalHttpData, 'data', [] ),
-				defaultVertical: get( defaultVerticalHttpData, 'data[0]', {} ),
-			};
-		},
 		() => ( {
-			requestVerticals: requestSiteVerticalHttpData,
-			requestDefaultVertical: ( searchTerm = 'business' ) =>
-				requestSiteVerticalHttpData( searchTerm, 1, DEFAULT_SITE_VERTICAL_REQUEST_ID ),
+			lastUpdated: getSiteVerticalsLastUpdated(),
+			verticals: getSiteVerticals(),
+			defaultVertical: getDefaultVertical(),
+		} ),
+		() => ( {
+			requestVerticals,
+			requestDefaultVertical,
 		} )
 	)( SiteVerticalsSuggestionSearch )
 );
